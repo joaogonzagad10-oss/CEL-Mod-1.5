@@ -1,0 +1,47 @@
+name: Build mod
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extrair projeto do zip (se enviado como zip)
+        run: |
+          if [ -f mod-animais-rpg.zip ]; then
+            unzip -q mod-animais-rpg.zip
+            cp -r mod-animais-rpg/. .
+          fi
+          ls -la
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build with Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4.2
+          arguments: build
+
+      - name: Upload jar (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: zootopiarpg-jar
+          path: build/libs/*.jar
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Zootopia RPG build ${{ github.run_number }}
+          files: build/libs/*.jar
